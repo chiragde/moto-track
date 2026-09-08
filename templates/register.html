@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - Moto Track{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">🏍</div>
+    <h1>Create Account</h1>
+    <p>Start tracking your motorbike expenses</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required>
+      </div>
+      <div class="form-group">
+        <label for="confirm">Confirm Password</label>
+        <input id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Create Account</button>
+    </form>
+
+    <a class="inline-link" href="{{ url_for('login') }}">Already have an account? Sign in</a>
+  </div>
+</div>
+{% endblock %}

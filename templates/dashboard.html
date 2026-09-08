@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav, vehicle_picker, empty_state %}
+
+{% block title %}Home - Moto Track{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  <main class="content home-content">
+    {{ flash_messages() }}
+
+    {% if not bikes %}
+      {{ empty_state('Welcome to Moto Track', 'Add your first bike to start tracking.', 'bike') }}
+      <a class="btn btn-primary" href="{{ url_for('garage') }}">Add a Bike</a>
+    {% else %}
+      {{ vehicle_picker(nav_bikes, nav_active_bike) }}
+
+      <section class="home-hero">
+        <div class="home-hero-photo">
+          {% if bike.photo %}
+            <img src="{{ url_for('serve_receipt', relative_path=bike.photo) }}" alt="{{ bike.name }}">
+          {% else %}
+            <div class="home-hero-placeholder">
+              <i data-lucide="bike" width="48" height="48"></i>
+            </div>
+          {% endif %}
+        </div>
+        <div class="home-hero-body">
+          <h1 class="home-hero-name">{{ bike.name }}</h1>
+          <p class="home-hero-subtitle">
+            {% if bike.make or bike.model %}
+              {{ bike.make or '' }} {{ bike.model or '' }}{% if bike.year %} · {{ bike.year }}{% endif %}
+            {% else %}
+              Your ride
+            {% endif %}
+          </p>
+          <a class="home-hero-edit" href="{{ url_for('garage') }}">Garage</a>
+        </div>
+      </section>
+
+      <section class="home-glance">
+        <div class="home-glance-card home-glance-primary">
+          <i data-lucide="gauge" class="home-glance-icon"></i>
+          <div class="home-glance-value">
+            {% if stats.latest_odo %}
+              {{ "{:,.0f}".format(stats.latest_odo.reading) }}
+            {% else %}—{% endif %}
+          </div>
+          <div class="home-glance-label">Odometer {{ user_settings.distance_unit }}</div>
+          {% if stats.latest_odo %}
+            <div class="home-glance-meta">Updated {{ stats.latest_odo.reading_date }}</div>
+          {% endif %}
+        </div>
+        <div class="home-glance-card">
+          <i data-lucide="fuel" class="home-glance-icon"></i>
+          <div class="home-glance-value small">
+            {% if stats.avg_efficiency %}{{ "%.1f"|format(stats.avg_efficiency) }}{% else %}—{% endif %}
+          </div>
+          <div class="home-glance-label">Efficiency {{ user_settings.efficiency_label }}</div>
+        </div>
+        <div class="home-glance-card">
+          <i data-lucide="wallet" class="home-glance-icon"></i>
+          <div class="home-glance-value small">
+            {% if stats.cost_per_km %}{{ user_settings.currency_symbol }}{{ "%.2f"|format(stats.cost_per_km) }}{% else %}—{% endif %}
+          </div>
+          <div class="home-glance-label">Cost / {{ user_settings.distance_unit }}</div>
+        </div>
+        <div class="home-glance-card">
+          <i data-lucide="wrench" class="home-glance-icon"></i>
+          <div class="home-glance-value small">{{ stats.maintenance_cost|money }}</div>
+          <div class="home-glance-label">Service spend</div>
+        </div>
+      </section>
+
+      {% if next_milestone %}
+        <section class="home-milestone home-milestone-{{ next_milestone.status }}">
+          <div class="home-milestone-badge">
+            <i data-lucide="{% if next_milestone.status == 'overdue' %}alert-circle{% else %}clock{% endif %}"></i>
+            <span>{{ 'Overdue' if next_milestone.status == 'overdue' else 'Coming up' }}</span>
+          </div>
+          <h2 class="home-milestone-title">{{ next_milestone.reminder.title }}</h2>
+          <p class="home-milestone-detail">{{ next_milestone.detail }}</p>
+          <a class="home-milestone-action" href="{{ url_for('care') }}">View in Care →</a>
+        </section>
+      {% endif %}
+
+      {% if reminders %}
+        <p class="section-label">Reminders</p>
+        <div class="card card-inset home-reminders">
+          {% for item in reminders %}
+            <div class="list-item reminder-item reminder-{{ item.status }}">
+              <div class="home-reminder-icon">
+                <i data-lucide="{{ care_task_icons.get(item.reminder.reminder_type, 'bell') }}"></i>
+              </div>
+              <div class="home-reminder-text">
+                <div class="title">{{ item.reminder.title }}</div>
+                <div class="meta">{% if item.detail %}{{ item.detail }}{% else %}On track{% endif %}</div>
+              </div>
+              <span class="badge badge-{{ item.status }}">{{ item.status }}</span>
+            </div>
+          {% endfor %}
+          <div class="card-footer-link"><a href="{{ url_for('care') }}">All reminders →</a></div>
+        </div>
+      {% endif %}
+
+      <p class="section-label">Quick links</p>
+      <div class="home-actions">
+        <a class="home-action-btn" href="{{ url_for('timeline') }}">
+          <i data-lucide="clock"></i>
+          <span>Timeline</span>
+        </a>
+        <a class="home-action-btn" href="{{ url_for('fuel') }}">
+          <i data-lucide="fuel"></i>
+          <span>Log fuel</span>
+        </a>
+        <a class="home-action-btn" href="{{ url_for('odometer') }}">
+          <i data-lucide="gauge"></i>
+          <span>Odometer</span>
+        </a>
+        <a class="home-action-btn" href="{{ url_for('care') }}">
+          <i data-lucide="wrench"></i>
+          <span>DIY care</span>
+        </a>
+      </div>
+
+      {% if stats.recent_fuel %}
+        <p class="section-label">Last fill-up</p>
+        <div class="card card-inset">
+          {% set entry = stats.recent_fuel[0] %}
+          <div class="list-item">
+            <div>
+              <div class="title">{{ entry.entry_date }}</div>
+              <div class="meta">{{ "%.1f"|format(entry.liters) }} {{ user_settings.volume_unit }} · {{ "{:,.0f}".format(entry.odometer) }} {{ user_settings.distance_unit }}</div>
+            </div>
+            <div class="amount">{{ entry.cost|money }}</div>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="tip-card home-tip">
+        <div class="tip-label"><i data-lucide="lightbulb"></i> Tip</div>
+        <p>{{ tip }}</p>
+      </div>
+    {% endif %}
+  </main>
+
+  {{ bottom_nav('dashboard') }}
+</div>
+{% endblock %}

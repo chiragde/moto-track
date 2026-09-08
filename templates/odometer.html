@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav, swipe_row, empty_state %}
+
+{% block title %}Odometer - Moto Track{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('Odometer', bike.name if bike else '', url_for('more'), 'More', bikes=nav_bikes, active_bike=nav_active_bike) }}
+
+  <main class="content">
+    {{ flash_messages() }}
+
+    <div class="card">
+      <div class="card-header">Add Reading</div>
+      <form method="post" style="padding: 0 16px 16px;">
+        <div class="form-group">
+          <label for="reading_date">Date</label>
+          <input id="reading_date" name="reading_date" type="date" required>
+        </div>
+        <div class="form-group">
+          <label for="reading">Odometer Reading (km)</label>
+          <input id="reading" name="reading" type="number" step="0.1" min="0" placeholder="e.g. 15420" required>
+        </div>
+        <div class="form-group">
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes" placeholder="Monthly check, before trip, etc."></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Save Reading</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">History</div>
+      {% if readings %}
+        {% for reading in readings %}
+          {% call swipe_row(url_for('edit_odometer', entry_id=reading.id), url_for('delete_odometer', entry_id=reading.id)) %}
+          <div class="list-item">
+            <div>
+              <div class="title">{{ "%.0f"|format(reading.reading) }} km</div>
+              <div class="meta">{{ reading.reading_date }}</div>
+              {% if reading.notes %}
+                <div class="meta">{{ reading.notes }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endcall %}
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><p>No odometer readings yet.</p></div>
+      {% endif %}
+    </div>
+  </main>
+
+  {{ bottom_nav('more') }}
+</div>
+<script>
+  document.getElementById('reading_date').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav, swipe_row, empty_state %}
+
+{% block title %}Timeline - Moto Track{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/timeline.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('Timeline', bikes=nav_bikes, active_bike=nav_active_bike) }}
+
+  <main class="content">
+    {{ flash_messages() }}
+
+    <div class="timeline-filters" role="tablist">
+      <button type="button" class="timeline-filter active" data-filter="all">All</button>
+      <button type="button" class="timeline-filter" data-filter="service">Service</button>
+      <button type="button" class="timeline-filter" data-filter="fuel">Fuel</button>
+      <button type="button" class="timeline-filter" data-filter="care">Care</button>
+      <button type="button" class="timeline-filter" data-filter="odometer">Snapshots</button>
+    </div>
+
+    {% if months %}
+      {% for month in months %}
+        <section class="timeline-month" data-month="{{ month.key }}">
+          <h2 class="timeline-month-label">{{ month.label }}</h2>
+          {% for entry in month.entries %}
+            <div class="timeline-entry" data-timeline-kind="{{ entry.kind }}">
+            {% call swipe_row(entry.edit_url, entry.delete_url) %}
+            <div class="timeline-card-content">
+              <article class="timeline-card">
+                <div class="timeline-card-accent"></div>
+                <div class="timeline-card-body">
+                  <div class="timeline-card-top">
+                    <div class="timeline-card-main">
+                      <div class="timeline-card-icon">
+                        <i data-lucide="{{ entry.icon }}"></i>
+                      </div>
+                      <div>
+                        <h3 class="timeline-card-title">{{ entry.title }}</h3>
+                        <div class="timeline-card-subtitle">{{ entry.subtitle }}</div>
+                      </div>
+                    </div>
+                    <div class="timeline-card-right">
+                      {% if entry.cost %}
+                        <div class="timeline-card-cost">{{ entry.cost|money }}</div>
+                      {% endif %}
+                      <div class="timeline-card-date">{{ entry.date }}</div>
+                    </div>
+                  </div>
+                  {% if entry.odometer %}
+                    <div class="timeline-card-odo">{{ "{:,.0f}".format(entry.odometer) }} {{ user_settings.distance_unit }}</div>
+                  {% endif %}
+                  {% if entry.provider %}
+                    <div class="timeline-card-provider">{{ entry.provider }}</div>
+                  {% endif %}
+                  {% if entry.notes %}
+                    <div class="timeline-card-notes">{{ entry.notes }}</div>
+                  {% endif %}
+                </div>
+              </article>
+            </div>
+            {% endcall %}
+            </div>
+          {% endfor %}
+        </section>
+      {% endfor %}
+    {% else %}
+      {{ empty_state('No history yet', 'Fuel, service, and care entries will appear here chronologically.', 'clock') }}
+    {% endif %}
+  </main>
+
+  {{ bottom_nav('timeline') }}
+</div>
+<script src="{{ url_for('static', filename='js/timeline.js') }}"></script>
+{% endblock %}

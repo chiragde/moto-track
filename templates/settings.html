@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav %}
+
+{% block title %}Settings - Moto Track{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('Settings', 'Preferences', url_for('more'), 'More', bikes=nav_bikes, active_bike=nav_active_bike) }}
+
+  <main class="content">
+    {{ flash_messages() }}
+
+    <form method="post">
+      <input type="hidden" name="action" value="save_settings">
+      <p class="section-label">Display</p>
+      <div class="card card-inset">
+        <div class="form-group" style="padding: 12px 16px;">
+          <label for="theme">Theme</label>
+          <select id="theme" name="theme">
+            <option value="system" {% if settings.theme == 'system' %}selected{% endif %}>System</option>
+            <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>Light</option>
+            <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>Dark</option>
+          </select>
+        </div>
+        <div class="form-group" style="padding: 0 16px 12px;">
+          <label for="currency">Currency</label>
+          <select id="currency" name="currency">
+            {% for code, info in currencies.items() %}
+              <option value="{{ code }}" {% if settings.currency == code %}selected{% endif %}>{{ info.label }} ({{ info.symbol }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="padding: 0 16px 12px;">
+          <label for="unit_system">Units</label>
+          <select id="unit_system" name="unit_system">
+            <option value="metric" {% if settings.unit_system == 'metric' %}selected{% endif %}>Metric (km, L)</option>
+            <option value="imperial" {% if settings.unit_system == 'imperial' %}selected{% endif %}>Imperial (mi, gal)</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="section-label">Notifications</p>
+      <div class="card card-inset">
+        <div class="list-item">
+          <div>
+            <div class="title">Reminder alerts</div>
+            <div class="meta">Browser notifications for due maintenance</div>
+          </div>
+          <input type="checkbox" name="notifications_enabled" {% if settings.notifications_enabled %}checked{% endif %}>
+        </div>
+        <div style="padding: 0 16px 12px;">
+          <button type="button" class="btn btn-secondary" id="enable-notifications">Enable notifications</button>
+        </div>
+        <div class="form-group" style="padding: 0 16px 12px;">
+          <label for="email">Email (for password reset)</label>
+          <input id="email" name="email" type="email" value="{{ settings.email or '' }}" placeholder="you@example.com">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" type="submit">Save Settings</button>
+    </form>
+
+    <p class="section-label">Security</p>
+    <div class="card card-inset">
+      <form method="post" style="padding: 12px 16px;">
+        <input type="hidden" name="action" value="change_password">
+        <div class="form-group">
+          <label for="current_password">Current password</label>
+          <input id="current_password" name="current_password" type="password" required>
+        </div>
+        <div class="form-group">
+          <label for="new_password">New password</label>
+          <input id="new_password" name="new_password" type="password" required>
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm new password</label>
+          <input id="confirm_password" name="confirm_password" type="password" required>
+        </div>
+        <button class="btn btn-secondary" type="submit">Change Password</button>
+      </form>
+    </div>
+  </main>
+
+  {{ bottom_nav('more') }}
+</div>
+<script>
+  document.getElementById('theme').addEventListener('change', function (e) {
+    if (window.setMotoTheme) window.setMotoTheme(e.target.value);
+  });
+  // Apply saved theme immediately on load (in case change event didn't fire)
+  if (window.setMotoTheme) window.setMotoTheme(document.getElementById('theme').value);
+</script>
+{% endblock %}

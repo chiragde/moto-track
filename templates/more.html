@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav %}
+
+{% block title %}More - Moto Track{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('More', g.user.username, bikes=nav_bikes, active_bike=nav_active_bike) }}
+
+  <main class="content">
+    {{ flash_messages() }}
+
+    <p class="section-label">Tracking</p>
+    <div class="card card-inset">
+      <a class="list-item menu-link" href="{{ url_for('maintenance') }}">
+        <div><div class="title">Service</div><div class="meta">Workshop & repairs</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('odometer') }}">
+        <div><div class="title">Odometer</div><div class="meta">Log readings</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('receipts_gallery') }}">
+        <div><div class="title">Receipt Gallery</div><div class="meta">All uploaded receipts</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('export_csv') }}">
+        <div><div class="title">Export CSV</div><div class="meta">Download your data</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+    </div>
+
+    <p class="section-label">Preferences</p>
+    <div class="card card-inset">
+      <a class="list-item menu-link" href="{{ url_for('settings') }}">
+        <div><div class="title">Settings</div><div class="meta">Theme, units, notifications</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('care', from='more') }}">
+        <div><div class="title">DIY Care & Reminders</div><div class="meta">Chain lube, reminders</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('stats', from='more') }}">
+        <div><div class="title">Stats & Charts</div><div class="meta">Efficiency, spend</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+    </div>
+
+    <p class="section-label">Account</p>
+    <div class="card card-inset">
+      <a class="list-item menu-link" href="{{ url_for('logout') }}">
+        <div><div class="title">Sign Out</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+    </div>
+  </main>
+
+  {{ bottom_nav('more') }}
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav, receipt_scanner, swipe_row, empty_state %}
+
+{% block title %}Maintenance - Moto Track{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('Service', bikes=nav_bikes, active_bike=nav_active_bike) }}
+
+  <main class="content">
+    {{ flash_messages() }}
+
+    <div class="stat-card" style="margin-bottom: 16px;">
+      <div class="label">Total Maintenance Spend</div>
+      <div class="value">{{ total_cost|money }}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Add Maintenance</div>
+      <form method="post" enctype="multipart/form-data" style="padding: 0 16px 16px;">
+        {{ receipt_scanner('maintenance', receipt_scanning_enabled) }}
+        <div class="segmented">
+          <div>
+            <input id="type_service" name="entry_type" type="radio" value="service" checked>
+            <label for="type_service">Service</label>
+          </div>
+          <div>
+            <input id="type_adhoc" name="entry_type" type="radio" value="adhoc">
+            <label for="type_adhoc">Ad hoc</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="entry_date">Date</label>
+          <input id="entry_date" name="entry_date" type="date" required>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <input id="description" name="description" type="text" placeholder="Oil change, chain lube, etc." required>
+        </div>
+        <div class="form-group">
+          <label for="cost">Cost ({{ user_settings.currency_symbol }})</label>
+          <input id="cost" name="cost" type="number" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="odometer">Odometer (km, optional)</label>
+          <input id="odometer" name="odometer" type="number" step="0.1" min="0">
+        </div>
+        <div class="form-group">
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Save Maintenance</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">History</div>
+      {% if entries %}
+        {% for entry in entries %}
+          {% call swipe_row(url_for('edit_maintenance', entry_id=entry.id), url_for('delete_maintenance', entry_id=entry.id)) %}
+          <div class="list-item">
+            <div>
+              <div class="title">{{ entry.description }}</div>
+              <div class="meta">
+                {{ entry.entry_date }}
+                <span class="badge badge-{{ entry.entry_type }}">{{ entry.entry_type }}</span>
+                {% if entry.odometer %}
+                  · {{ "%.0f"|format(entry.odometer) }} km
+                {% endif %}
+              </div>
+              {% if entry.notes %}
+                <div class="meta">{{ entry.notes }}</div>
+              {% endif %}
+              {% if entry.receipt_image %}
+                <div class="meta"><a href="{{ url_for('serve_receipt', relative_path=entry.receipt_image) }}">View bill</a></div>
+              {% endif %}
+            </div>
+            <div class="amount">{{ entry.cost|money }}</div>
+          </div>
+          {% endcall %}
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><p>No maintenance entries yet.</p></div>
+      {% endif %}
+    </div>
+  </main>
+
+  {{ bottom_nav('more') }}
+</div>
+<script src="{{ url_for('static', filename='js/receipt-upload.js') }}"></script>
+<script>
+  document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

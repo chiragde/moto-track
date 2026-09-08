@@ -1,0 +1,84 @@
+/* Care tab — history-first layout */
+
+.app-shell-care .content {
+  padding-bottom: 88px;
+}
+
+.care-reminders-strip {
+  margin-bottom: 20px;
+}
+
+.care-reminders-strip .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.care-reminder-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ios-accent, #ff9500);
+  background: rgba(255, 149, 0, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.care-reminders-strip .reminder-item {
+  border-bottom: 0.5px solid var(--ios-border);
+}
+
+.care-reminders-strip .reminder-item:last-child {
+  border-bottom: none;
+}
+
+.care-history-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.care-history-header .section-label {
+  margin: 0;
+}
+
+.care-history-count {
+  font-size: 13px;
+  color: var(--ios-gray);
+}
+
+.care-empty-cta {
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.care-empty-cta i {
+  width: 48px;
+  height: 48px;
+  color: var(--ios-accent, #ff9500);
+  margin-bottom: 12px;
+}
+
+.care-empty-cta h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.care-empty-cta p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--ios-gray);
+}
+
+.care-sheet-form {
+  padding-top: 4px;
+}
+
+.care-sheet-form .icon-picker {
+  margin-bottom: 12px;
+}
+
+.care-sheet-form .btn {
+  margin-top: 8px;
+}

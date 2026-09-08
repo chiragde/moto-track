@@ -1,0 +1,11 @@
+moto_track.db
+tests/data/*.db
+!tests/data/.gitkeep
+__pycache__/
+*.pyc
+.venv/
+.env
+uploads/
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,132 @@
+{% macro top_bar(title, subtitle=None, back_url=None, back_label='Back', show_picker=True, bikes=None, active_bike=None) %}
+<header class="top-bar{% if back_url %} has-back{% endif %}">
+  {% if back_url %}
+    <a class="top-bar-back nav-back" href="{{ back_url }}">
+      <span class="back-chevron" aria-hidden="true">‹</span>
+      <span class="back-label">{{ back_label }}</span>
+    </a>
+  {% endif %}
+  <div class="top-bar-center">
+    <h1>{{ title }}</h1>
+    {% if subtitle %}
+      <div class="subtitle">{{ subtitle }}</div>
+    {% endif %}
+  </div>
+</header>
+{% if show_picker and bikes and active_bike %}
+  {{ vehicle_picker(bikes, active_bike) }}
+{% endif %}
+{% endmacro %}
+
+{% macro flash_messages() %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+{% endmacro %}
+
+{% macro vehicle_picker(bikes, active_bike) %}
+{% if bikes and active_bike and bikes|length >= 1 %}
+<div class="vehicle-picker-bar">
+  <div class="vehicle-picker-scroll">
+    {% for item in bikes %}
+      <a class="vehicle-pill {% if item.id == active_bike.id %}active{% endif %}"
+         href="{{ url_for('select_bike', bike_id=item.id) }}"
+         aria-current="{{ 'true' if item.id == active_bike.id else 'false' }}">
+        <span class="vehicle-pill-avatar">
+          {% if item.photo %}
+            <img src="{{ url_for('serve_receipt', relative_path=item.photo) }}" alt="">
+          {% else %}
+            <i data-lucide="bike"></i>
+          {% endif %}
+        </span>
+        <span class="vehicle-pill-name">{{ item.name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro bike_selector(bikes, active_bike) %}
+{% endmacro %}
+
+{% macro bottom_nav(active) %}
+<nav class="bottom-nav bottom-nav-6">
+  <a class="nav-item {% if active == 'garage' %}active{% endif %}" href="{{ url_for('garage') }}">
+    <i data-lucide="warehouse" class="nav-icon-svg"></i>
+    <span>Garage</span>
+  </a>
+  <a class="nav-item {% if active == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+    <i data-lucide="home" class="nav-icon-svg"></i>
+    <span>Home</span>
+  </a>
+  <a class="nav-item {% if active == 'timeline' %}active{% endif %}" href="{{ url_for('timeline') }}">
+    <i data-lucide="clock" class="nav-icon-svg"></i>
+    <span>Timeline</span>
+  </a>
+  <a class="nav-item {% if active == 'fuel' %}active{% endif %}" href="{{ url_for('fuel') }}">
+    <i data-lucide="fuel" class="nav-icon-svg"></i>
+    <span>Fuel</span>
+  </a>
+  <a class="nav-item {% if active == 'care' %}active{% endif %}" href="{{ url_for('care') }}">
+    <i data-lucide="wrench" class="nav-icon-svg"></i>
+    <span>Care</span>
+  </a>
+  <a class="nav-item {% if active == 'more' %}active{% endif %}" href="{{ url_for('more') }}">
+    <i data-lucide="ellipsis" class="nav-icon-svg"></i>
+    <span>More</span>
+  </a>
+</nav>
+{% endmacro %}
+
+{% macro receipt_scanner(entry_type, scanning_enabled) %}
+<div class="receipt-scanner" data-entry-type="{{ entry_type }}" data-scan-enabled="{{ 'true' if scanning_enabled else 'false' }}">
+  <input type="file" class="receipt-file-input" name="receipt_image" accept="image/*" capture="environment" hidden>
+  <input type="hidden" name="receipt_path" class="receipt-path-input" value="">
+  <div class="receipt-actions">
+    <button type="button" class="btn btn-secondary receipt-scan-btn">📷 Scan receipt</button>
+    <button type="button" class="btn btn-secondary receipt-clear-btn" hidden>Remove</button>
+  </div>
+  <div class="receipt-status" hidden></div>
+  <div class="receipt-preview" hidden>
+    <img class="receipt-preview-image" alt="Receipt preview">
+  </div>
+  {% if not scanning_enabled %}
+    <p class="receipt-hint">Attach a receipt image. Set <code>OPENAI_API_KEY</code> to auto-fill fields from the photo.</p>
+  {% else %}
+    <p class="receipt-hint">Take a photo or upload a receipt to auto-fill the form.</p>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro empty_state(title, message, icon='inbox') %}
+<div class="empty-state">
+  <div class="empty-illustration">
+    <i data-lucide="{{ icon }}" width="80" height="80"></i>
+  </div>
+  <h2>{{ title }}</h2>
+  <p>{{ message }}</p>
+</div>
+{% endmacro %}
+
+{% macro swipe_row(edit_url, delete_url) %}
+<div class="swipe-row" data-swipe-row>
+  <div class="swipe-row-actions">
+    <a href="{{ edit_url }}" class="swipe-action swipe-edit" aria-label="Edit">
+      <i data-lucide="pencil"></i>
+    </a>
+    <form method="post" action="{{ delete_url }}" class="swipe-delete-form" onsubmit="return confirm('Delete this entry?')">
+      <button type="submit" class="swipe-action swipe-delete" aria-label="Delete">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </form>
+  </div>
+  <div class="swipe-row-content">
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}

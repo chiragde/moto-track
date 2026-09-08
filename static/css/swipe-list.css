@@ -1,0 +1,95 @@
+/* iOS-style swipe-to-reveal rows */
+
+.swipe-row {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 0.5px solid var(--ios-border);
+  isolation: isolate;
+  background: var(--ios-card);
+}
+
+.swipe-row:last-child {
+  border-bottom: none;
+}
+
+.swipe-row-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  z-index: 0;
+  width: 144px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.swipe-row.is-open .swipe-row-actions,
+.swipe-row.is-dragging .swipe-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.swipe-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  padding: 0;
+}
+
+.swipe-action i {
+  width: 20px;
+  height: 20px;
+}
+
+.swipe-edit {
+  background: #8e8e93;
+}
+
+.swipe-delete {
+  background: var(--ios-red);
+}
+
+.swipe-delete-form {
+  margin: 0;
+  height: 100%;
+  display: flex;
+}
+
+.swipe-row-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  background: var(--ios-card);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  touch-action: pan-y;
+}
+
+.swipe-row.is-open .swipe-row-content {
+  transform: translateX(-144px);
+}
+
+.swipe-row-content.list-item {
+  display: flex;
+  align-items: center;
+}
+
+.card .swipe-row-content.list-item {
+  background: var(--ios-card);
+}
+
+/* Hide legacy inline actions */
+.entry-actions {
+  display: none !important;
+}

@@ -1,0 +1,314 @@
+/* iOS-style motion tokens and animations */
+
+:root {
+  --ios-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ios-ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
+  --ios-spring: cubic-bezier(0.34, 1.25, 0.64, 1);
+  --ios-spring-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --ios-duration-fast: 0.22s;
+  --ios-duration: 0.42s;
+  --ios-duration-slow: 0.62s;
+  --ios-duration-enter: 0.72s;
+
+  --anim-origin-x: 50%;
+  --anim-origin-y: 85%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Origin-based emerge — content pulls in from the tapped element */
+@keyframes ios-emerge-from-origin {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--enter-tx, 0), var(--enter-ty, 0), 0) scale(0.9);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes ios-page-emerge {
+  from {
+    opacity: 0.35;
+    transform: scale(0.94);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes ios-slide-in-right {
+  from {
+    opacity: 0.5;
+    transform: translate3d(40px, 0, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ios-slide-in-left {
+  from {
+    opacity: 0.5;
+    transform: translate3d(-40px, 0, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ios-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ios-flash-in {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--enter-tx, 0), var(--enter-ty, -12px), 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ios-nav-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.app-shell .top-bar,
+.app-shell .content {
+  transform-origin: var(--anim-origin-x) var(--anim-origin-y);
+  will-change: transform, opacity, filter;
+}
+
+body.nav-forward .app-shell .top-bar,
+body.nav-forward .app-shell .content,
+body.nav-back .app-shell .top-bar,
+body.nav-back .app-shell .content {
+  animation-duration: var(--ios-duration-slow);
+  animation-timing-function: var(--ios-spring-soft);
+  animation-fill-mode: both;
+}
+
+body.nav-forward .app-shell .top-bar,
+body.nav-forward .app-shell .content {
+  animation-name: ios-slide-in-right;
+}
+
+body.nav-back .app-shell .top-bar,
+body.nav-back .app-shell .content {
+  animation-name: ios-slide-in-left;
+}
+
+body.nav-tab .app-shell .content {
+  animation: ios-page-emerge var(--ios-duration-enter) var(--ios-spring-soft) both;
+}
+
+body.nav-tab .app-shell .top-bar {
+  animation: ios-page-emerge calc(var(--ios-duration-enter) * 0.85) var(--ios-spring-soft) both;
+}
+
+body.nav-auth .auth-card {
+  animation: ios-scale-in 0.65s var(--ios-spring-soft) both;
+}
+
+body.nav-auth .auth-logo {
+  animation: ios-scale-in 0.7s var(--ios-spring-soft) 0.08s both;
+}
+
+/* Staggered content — each block emerges from the navigation origin */
+.animate-from-origin {
+  animation: ios-emerge-from-origin var(--ios-duration-enter) var(--ios-spring-soft) both;
+  animation-delay: var(--enter-delay, 0.12s);
+  transform-origin: center center;
+  will-change: transform, opacity, filter;
+}
+
+/* Press feedback */
+.btn,
+.nav-item,
+.bike-chip,
+.menu-link,
+.top-bar-back,
+.card-footer-link a,
+.segmented label {
+  transition:
+    transform var(--ios-duration-fast) var(--ios-spring),
+    opacity var(--ios-duration-fast) var(--ios-ease-out),
+    background-color var(--ios-duration-fast) var(--ios-ease-out),
+    color var(--ios-duration-fast) var(--ios-ease-out),
+    border-color var(--ios-duration-fast) var(--ios-ease-out),
+    box-shadow var(--ios-duration-fast) var(--ios-ease-out);
+}
+
+.btn {
+  transform: scale(1);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.88;
+}
+
+.nav-item {
+  transform: scale(1);
+  border-radius: 10px;
+}
+
+.nav-item:active {
+  transform: scale(0.92);
+  opacity: 0.7;
+}
+
+.nav-item.active .nav-icon {
+  animation: ios-nav-pop 0.42s var(--ios-spring);
+}
+
+.bike-chip:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+.bike-chip.active {
+  transition:
+    transform var(--ios-duration-fast) var(--ios-spring),
+    background-color var(--ios-duration) var(--ios-ease-out),
+    color var(--ios-duration) var(--ios-ease-out),
+    border-color var(--ios-duration) var(--ios-ease-out);
+}
+
+.menu-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.15s var(--ios-ease-out);
+}
+
+.menu-link:active {
+  background: var(--ios-border);
+}
+
+.list-item.menu-link span:last-child {
+  transition: transform var(--ios-duration-fast) var(--ios-spring);
+}
+
+.list-item.menu-link:active span:last-child {
+  transform: translateX(3px);
+}
+
+.top-bar-back:active {
+  opacity: 0.45;
+  transform: translateX(-2px);
+}
+
+.top-bar-back {
+  transition:
+    opacity var(--ios-duration-fast) var(--ios-ease-out),
+    transform var(--ios-duration-fast) var(--ios-spring);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  transition:
+    background-color var(--ios-duration-fast) var(--ios-ease-out),
+    box-shadow var(--ios-duration-fast) var(--ios-ease-out),
+    transform var(--ios-duration-fast) var(--ios-spring);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  background: var(--ios-focus-bg);
+  box-shadow: 0 0 0 3px var(--ios-focus-ring);
+  transform: scale(1.01);
+}
+
+.segmented label {
+  transition:
+    background-color var(--ios-duration) var(--ios-spring-soft),
+    color var(--ios-duration) var(--ios-ease-out),
+    transform var(--ios-duration-fast) var(--ios-spring);
+}
+
+.segmented label:active {
+  transform: scale(0.97);
+}
+
+.flash {
+  animation: ios-flash-in 0.55s var(--ios-spring-soft) both;
+}
+
+.receipt-preview:not([hidden]) {
+  animation: ios-emerge-from-origin 0.55s var(--ios-spring-soft) both;
+}
+
+.receipt-preview-image {
+  transition: opacity var(--ios-duration) var(--ios-ease-out);
+}
+
+.top-bar {
+  transition:
+    background-color var(--ios-duration) var(--ios-ease-out),
+    box-shadow var(--ios-duration) var(--ios-ease-out);
+}
+
+.top-bar.is-scrolled {
+  background: var(--ios-surface-scrolled);
+  box-shadow: 0 0.5px 0 var(--ios-border);
+}
+
+.bottom-nav {
+  animation: ios-page-emerge 0.55s var(--ios-ease-out) 0.05s both;
+  transform-origin: var(--anim-origin-x) var(--anim-origin-y);
+}
+
+.card .list-item:not(.menu-link) {
+  transition: background-color 0.15s var(--ios-ease-out);
+}
+
+.card .list-item a:active {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .app-shell .top-bar,
+  .app-shell .content {
+    will-change: auto;
+  }
+}

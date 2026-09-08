@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav %}
+
+{% block title %}Receipts - Moto Track{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('Receipts', 'Fuel & service bills', url_for('more'), 'More', bikes=nav_bikes, active_bike=nav_active_bike) }}
+  <main class="content">
+    {{ flash_messages() }}
+
+    <p class="section-label">Fuel receipts</p>
+    <div class="card card-inset">
+      {% if fuel_receipts %}
+        {% for r in fuel_receipts %}
+          <div class="list-item">
+            <div>
+              <div class="title">{{ r.entry_date }}</div>
+              <div class="meta">{{ r.cost|money }}</div>
+            </div>
+            <a href="{{ url_for('serve_receipt', relative_path=r.receipt_image) }}">View</a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><p>No fuel receipts yet.</p></div>
+      {% endif %}
+    </div>
+
+    <p class="section-label">Service bills</p>
+    <div class="card card-inset">
+      {% if maintenance_receipts %}
+        {% for r in maintenance_receipts %}
+          <div class="list-item">
+            <div>
+              <div class="title">{{ r.description }}</div>
+              <div class="meta">{{ r.entry_date }} · {{ r.cost|money }}</div>
+            </div>
+            <a href="{{ url_for('serve_receipt', relative_path=r.receipt_image) }}">View</a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><p>No service bills yet.</p></div>
+      {% endif %}
+    </div>
+  </main>
+  {{ bottom_nav('more') }}
+</div>
+{% endblock %}

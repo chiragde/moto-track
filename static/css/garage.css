@@ -1,0 +1,139 @@
+.app-shell-fab .content {
+  padding-bottom: 88px;
+}
+
+.garage-top-bar h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.garage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.garage-tile {
+  position: relative;
+  background: var(--ios-card);
+  border-radius: var(--ios-radius-lg);
+  border: 2px solid transparent;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.garage-tile.active {
+  border-color: var(--ios-accent, #ff9500);
+  box-shadow: 0 4px 20px rgba(255, 149, 0, 0.2);
+}
+
+.garage-tile-select {
+  display: block;
+  padding: 16px 14px 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.garage-tile-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--ios-bg);
+}
+
+.garage-tile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.garage-tile-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(255, 149, 0, 0.25), var(--ios-bg));
+  color: var(--ios-accent, #ff9500);
+}
+
+.garage-tile-placeholder i {
+  width: 48px;
+  height: 48px;
+}
+
+.garage-tile-active-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ios-accent, #ff9500);
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.garage-tile-active-badge i {
+  width: 16px;
+  height: 16px;
+}
+
+.garage-tile-name {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.garage-tile-odo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ios-accent, #ff9500);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.garage-tile-meta {
+  font-size: 12px;
+  color: var(--ios-gray);
+  margin-top: 4px;
+}
+
+.garage-photo-form {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.garage-photo-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  color: white;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.garage-photo-btn i {
+  width: 16px;
+  height: 16px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

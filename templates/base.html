@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-pref="{{ user_settings.theme }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#007aff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+  <title>{% block title %}Moto Track{% endblock %}</title>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/swipe-list.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bike-fab.css') }}">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% if app_test_mode %}
+  <div class="test-mode-banner" role="status">Test database — isolated from production</div>
+  {% endif %}
+  {% block body %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/animations.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/swipe-list.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/haptics.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
