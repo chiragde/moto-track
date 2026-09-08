@@ -111,6 +111,29 @@
   font-size: 20px;
 }
 
+.home-glance-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+}
+
+.home-glance-hint {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ios-text-secondary);
+  font-weight: 500;
+}
+
+.trend-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.trend-good { color: var(--ios-green); }
+.trend-bad { color: var(--ios-red); }
+
 .home-glance-label {
   font-size: 12px;
   color: var(--ios-gray);
@@ -248,6 +271,205 @@
 
 .bike-list-card {
   padding-bottom: 0;
+}
+
+.home-tip {
+  margin-top: 8px;
+}
+
+/* Parts health strip */
+.home-parts-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px var(--inset-group-margin) 16px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.home-part-chip {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 108px;
+  max-width: 120px;
+  scroll-snap-align: start;
+  animation: motion-chip-in 0.45s var(--ios-spring-soft) both;
+}
+
+.home-part-meter {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  --part-color: var(--ios-green);
+}
+
+.home-part-soon .home-part-meter { --part-color: var(--ios-orange); }
+.home-part-overdue .home-part-meter { --part-color: var(--ios-red); }
+.home-part-setup .home-part-meter { --part-color: var(--ios-gray); }
+
+.home-part-meter svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.home-part-track {
+  fill: none;
+  stroke: var(--ios-border);
+  stroke-width: 5;
+}
+
+.home-part-arc {
+  fill: none;
+  stroke: var(--part-color);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 188.5;
+  stroke-dashoffset: calc(188.5 - (188.5 * var(--health) / 100));
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.home-part-icon-wrap {
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--part-color) 16%, var(--ios-card));
+  display: grid;
+  place-items: center;
+  color: var(--part-color);
+}
+
+.home-part-icon-wrap i {
+  width: 24px;
+  height: 24px;
+}
+
+.home-part-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ios-label);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.home-part-pct {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--part-color, var(--ios-label));
+}
+
+.home-part-chip.home-part-ok .home-part-pct { color: var(--ios-green); }
+.home-part-chip.home-part-soon .home-part-pct { color: var(--ios-orange); }
+.home-part-chip.home-part-overdue .home-part-pct { color: var(--ios-red); }
+
+.home-part-detail {
+  font-size: 11px;
+  color: var(--ios-text-secondary);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 108px;
+}
+
+/* Reminder neglect gradient */
+.home-reminders .reminder-item {
+  --neglect: 10;
+  border-left: 4px solid color-mix(in srgb, var(--ios-green) calc(100% - var(--neglect) * 1%), var(--ios-red));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ios-red) calc(var(--neglect) * 0.12%), transparent),
+    transparent 55%
+  );
+  border-radius: 0;
+}
+
+.reminder-urgency-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--ios-green) calc(100% - var(--neglect) * 1%), var(--ios-red));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ios-red) calc(var(--neglect) * 0.15%), transparent);
+}
+
+/* Fuel story snippet on home */
+.fuel-story-item {
+  padding: 14px 16px;
+}
+
+.fuel-story-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ios-blue);
+  margin-bottom: 6px;
+}
+
+.fuel-story-text {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ios-label);
+}
+
+.fuel-story-cost {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bike-list-row {
+.home-specs {
+  margin: 0 var(--inset-group-margin) 20px;
+  padding: 14px 16px;
+}
+
+.home-specs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.home-specs-header small {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--ios-secondary);
+}
+
+.home-specs-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.home-spec-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.home-spec-label {
+  color: var(--ios-secondary);
+}
+
+.home-spec-value {
+  font-weight: 500;
+  text-align: right;
+}
+
+@keyframes motion-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .bike-list-row {

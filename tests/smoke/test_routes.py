@@ -14,14 +14,15 @@ USER = "qa_runner"
 PASSWORD = "testpass123"
 
 
-def ok(name: str, resp) -> bool:
+def ok(name: str, resp, binary: bool = False) -> bool:
     if resp.status_code >= 400:
         FAILURES.append(f"{name}: HTTP {resp.status_code}")
         return False
-    body = resp.get_data(as_text=True)
-    if "Traceback (most recent call last)" in body:
-        FAILURES.append(f"{name}: traceback in HTML")
-        return False
+    if not binary:
+        body = resp.get_data(as_text=True)
+        if "Traceback (most recent call last)" in body:
+            FAILURES.append(f"{name}: traceback in HTML")
+            return False
     PASSED.append(name)
     return True
 
@@ -64,13 +65,18 @@ def run_smoke_tests() -> int:
         "/odometer",
         "/settings",
         "/receipts",
+        "/expenses",
         "/export.csv",
+        "/export.pdf",
+        "/api/backup",
         "/api/due-reminders",
+        "/api/vapid-public-key",
         "/care?from=more",
         "/stats?from=more",
     ]
     for path in pages:
-        ok(f"GET {path}", client.get(path))
+        binary = path.endswith(".pdf") or path.endswith("/api/backup")
+        ok(f"GET {path}", client.get(path), binary=binary)
 
     today = date.today().isoformat()
 
@@ -245,6 +251,58 @@ def run_smoke_tests() -> int:
         FAILURES.append(f"parse-receipt unexpected {resp.status_code}")
     else:
         PASSED.append("POST /api/parse-receipt")
+
+    ok(
+        "POST fuel partial",
+        client.post(
+            "/fuel",
+            data={
+                "entry_date": today,
+                "liters": "5",
+                "cost": "500",
+                "odometer": "10150",
+                "is_partial": "1",
+                "station_name": "Shell QA",
+            },
+            follow_redirects=True,
+        ),
+    )
+
+    ok(
+        "POST expenses",
+        client.post(
+            "/expenses",
+            data={
+                "entry_date": today,
+                "category": "insurance",
+                "amount": "3500",
+                "notes": "qa policy",
+            },
+            follow_redirects=True,
+        ),
+    )
+
+    ok(
+        "POST api sync",
+        client.post(
+            "/api/sync",
+            json={
+                "entries": [
+                    {
+                        "kind": "fuel",
+                        "data": {
+                            "entry_date": today,
+                            "liters": "10",
+                            "cost": "900",
+                            "odometer": "10200",
+                            "is_partial": False,
+                            "station_name": "Offline Station",
+                        },
+                    }
+                ]
+            },
+        ),
+    )
 
     ok("GET logout", client.get("/logout", follow_redirects=True))
 

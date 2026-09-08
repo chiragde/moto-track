@@ -213,22 +213,76 @@ CREATE TABLE IF NOT EXISTS reminders (
 
 
 def migrate_db(conn):
-    migrations = {
-        "fuel_entries": ["receipt_image", "tag"],
-        "maintenance_entries": ["receipt_image"],
-        "bikes": ["photo"],
+    column_migrations = {
+        "fuel_entries": {
+            "receipt_image": "TEXT",
+            "tag": "TEXT",
+            "is_partial": "INTEGER DEFAULT 0",
+            "station_name": "TEXT",
+        },
+        "maintenance_entries": {"receipt_image": "TEXT"},
+        "bikes": {"photo": "TEXT"},
     }
-    for table, columns in migrations.items():
+    for table, columns in column_migrations.items():
         try:
             existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
         except Exception:
             existing = set()
-        for column in columns:
+        for column, col_type in columns.items():
             if column not in existing:
                 try:
-                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
                 except Exception:
                     pass
+
+    _ensure_table(
+        conn,
+        "expense_entries",
+        """
+        CREATE TABLE IF NOT EXISTS expense_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bike_id INTEGER NOT NULL,
+            entry_date TEXT NOT NULL,
+            category TEXT NOT NULL,
+            amount REAL NOT NULL,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (bike_id) REFERENCES bikes(id) ON DELETE CASCADE
+        )
+        """,
+    )
+    _ensure_table(
+        conn,
+        "bike_parts",
+        """
+        CREATE TABLE IF NOT EXISTS bike_parts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bike_id INTEGER NOT NULL,
+            part_type TEXT NOT NULL,
+            label TEXT NOT NULL,
+            interval_km INTEGER,
+            last_done_odometer REAL,
+            last_done_date TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (bike_id) REFERENCES bikes(id) ON DELETE CASCADE
+        )
+        """,
+    )
+    _ensure_table(
+        conn,
+        "push_subscriptions",
+        """
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            endpoint TEXT NOT NULL UNIQUE,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """,
+    )
 
     _ensure_table(
         conn,

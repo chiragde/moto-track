@@ -24,8 +24,20 @@
         <div><div class="title">Receipt Gallery</div><div class="meta">All uploaded receipts</div></div>
         <i data-lucide="chevron-right"></i>
       </a>
+      <a class="list-item menu-link" href="{{ url_for('expenses') }}">
+        <div><div class="title">Expenses & TCO</div><div class="meta">Insurance, tolls, total cost</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
       <a class="list-item menu-link" href="{{ url_for('export_csv') }}">
         <div><div class="title">Export CSV</div><div class="meta">Download your data</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('export_pdf') }}">
+        <div><div class="title">Export PDF report</div><div class="meta">Summary for records</div></div>
+        <i data-lucide="chevron-right"></i>
+      </a>
+      <a class="list-item menu-link" href="{{ url_for('api_backup') }}">
+        <div><div class="title">Backup data</div><div class="meta">Download ZIP archive</div></div>
         <i data-lucide="chevron-right"></i>
       </a>
     </div>

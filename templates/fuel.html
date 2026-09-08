@@ -6,6 +6,7 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/date-picker.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fuel.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -22,15 +23,28 @@
       </div>
       <div class="stat-card">
         <div class="label">Efficiency</div>
-        <div class="value small">
-          {% if stats.avg_efficiency %}{{ "%.1f"|format(stats.avg_efficiency) }} {{ user_settings.efficiency_label }}{% else %}—{% endif %}
+        <div class="value small fuel-efficiency-row">
+          {% if stats.avg_efficiency %}
+            <span>{{ "%.1f"|format(stats.avg_efficiency) }} {{ user_settings.efficiency_label }}</span>
+            {% if stats.efficiency_trend == 'up' %}
+              <i data-lucide="trending-up" class="trend-icon trend-good"></i>
+            {% elif stats.efficiency_trend == 'down' %}
+              <i data-lucide="trending-down" class="trend-icon trend-bad"></i>
+            {% endif %}
+          {% else %}
+            <span class="fuel-efficiency-hint">{{ stats.efficiency_hint or 'Log 2+ fill-ups' }}</span>
+          {% endif %}
         </div>
       </div>
     </div>
 
+    {% if stats.efficiency_alert %}
+      <div class="flash flash-warning motion-fade-in">{{ stats.efficiency_alert }}</div>
+    {% endif %}
+
     <p class="section-label">Quick add</p>
     <div class="card card-inset quick-add-card">
-      <form method="post" enctype="multipart/form-data" class="quick-add-form">
+      <form method="post" enctype="multipart/form-data" class="quick-add-form" data-offline-kind="fuel">
         <div class="quick-add-core">
           <div class="form-row-2">
             <div class="form-group">
@@ -62,6 +76,17 @@
         </button>
 
         <div class="quick-add-extra" id="fuel-more-panel" hidden>
+          <div class="form-group form-toggle">
+            <label class="toggle-row" for="is_partial">
+              <span>Partial fill-up</span>
+              <input type="checkbox" id="is_partial" name="is_partial" value="1">
+            </label>
+            <p class="form-hint">Skip this entry when calculating efficiency</p>
+          </div>
+          <div class="form-group">
+            <label for="station_name">Station</label>
+            <input id="station_name" name="station_name" type="text" placeholder="e.g. Indian Oil, Shell">
+          </div>
           <div class="form-group">
             <label for="tag">Trip type</label>
             <select id="tag" name="tag">
@@ -84,17 +109,23 @@
     <p class="section-label">History</p>
     <div class="card card-inset">
       {% if entries %}
-        {% for entry in entries %}
-          {% call swipe_row(url_for('edit_fuel', entry_id=entry.id), url_for('delete_fuel', entry_id=entry.id)) %}
-          <div class="list-item">
-            <div>
-              <div class="title">{{ entry.entry_date }}{% if entry.tag %} · {{ trip_tags.get(entry.tag, entry.tag) }}{% endif %}</div>
-              <div class="meta">{{ "%.1f"|format(entry.liters) }} {{ user_settings.volume_unit }} · {{ "{:,.0f}".format(entry.odometer) }} {{ user_settings.distance_unit }}</div>
-            </div>
-            <div class="amount">{{ entry.cost|money }}</div>
-          </div>
-          {% endcall %}
-        {% endfor %}
+        <div class="fuel-history-list">
+          {% for entry in entries %}
+            <article class="fuel-history-card">
+              <div class="fuel-history-date">{{ entry.entry_date|friendly_date }}</div>
+              <p class="fuel-history-sentence">{{ entry|fuel_sentence }}</p>
+              <div class="fuel-history-footer">
+                <span class="fuel-history-cost">{{ entry.cost|money }}</span>
+                <div class="fuel-history-actions">
+                  <a href="{{ url_for('edit_fuel', entry_id=entry.id) }}">Edit</a>
+                  <form method="post" action="{{ url_for('delete_fuel', entry_id=entry.id) }}" style="display:inline">
+                    <button type="submit" class="danger">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
       {% else %}
         {{ empty_state('No fuel yet', 'Use quick add above for your first fill-up.', 'fuel') }}
       {% endif %}

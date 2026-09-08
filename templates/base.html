@@ -12,6 +12,7 @@
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/swipe-list.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bike-fab.css') }}">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
@@ -23,6 +24,7 @@
   {% endif %}
   {% block body %}{% endblock %}
   <script src="{{ url_for('static', filename='js/animations.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/offline-queue.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/swipe-list.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/haptics.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>

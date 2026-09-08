@@ -23,26 +23,22 @@ html {
 @keyframes ios-emerge-from-origin {
   from {
     opacity: 0;
-    transform: translate3d(var(--enter-tx, 0), var(--enter-ty, 0), 0) scale(0.9);
-    filter: blur(3px);
+    transform: translate3d(var(--enter-tx, 0), var(--enter-ty, 0), 0) scale(0.96);
   }
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
   }
 }
 
 @keyframes ios-page-emerge {
   from {
-    opacity: 0.35;
-    transform: scale(0.94);
-    filter: blur(6px);
+    opacity: 0.4;
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
     transform: scale(1);
-    filter: blur(0);
   }
 }
 
@@ -99,7 +95,15 @@ html {
 .app-shell .top-bar,
 .app-shell .content {
   transform-origin: var(--anim-origin-x) var(--anim-origin-y);
-  will-change: transform, opacity, filter;
+}
+
+body.nav-forward .app-shell .top-bar,
+body.nav-forward .app-shell .content,
+body.nav-back .app-shell .top-bar,
+body.nav-back .app-shell .content,
+body.nav-tab .app-shell .content,
+body.nav-tab .app-shell .top-bar {
+  will-change: transform, opacity;
 }
 
 body.nav-forward .app-shell .top-bar,
@@ -122,11 +126,20 @@ body.nav-back .app-shell .content {
 }
 
 body.nav-tab .app-shell .content {
-  animation: ios-page-emerge var(--ios-duration-enter) var(--ios-spring-soft) both;
+  animation: ios-page-emerge var(--ios-duration) var(--ios-spring-soft) both;
 }
 
 body.nav-tab .app-shell .top-bar {
-  animation: ios-page-emerge calc(var(--ios-duration-enter) * 0.85) var(--ios-spring-soft) both;
+  animation: ios-page-emerge calc(var(--ios-duration) * 0.85) var(--ios-spring-soft) both;
+}
+
+/* Timeline runs its own entry cascade — skip the heavy page-scale on content */
+body.nav-tab.timeline-page .app-shell .content {
+  animation: none;
+}
+
+body.nav-tab.timeline-page .app-shell .top-bar {
+  animation: ios-page-emerge 0.35s var(--ios-spring-soft) both;
 }
 
 body.nav-auth .auth-card {
@@ -139,10 +152,15 @@ body.nav-auth .auth-logo {
 
 /* Staggered content — each block emerges from the navigation origin */
 .animate-from-origin {
-  animation: ios-emerge-from-origin var(--ios-duration-enter) var(--ios-spring-soft) both;
+  animation: ios-emerge-from-origin var(--ios-duration) var(--ios-spring-soft) both;
   animation-delay: var(--enter-delay, 0.12s);
   transform-origin: center center;
-  will-change: transform, opacity, filter;
+}
+
+body.nav-forward .animate-from-origin,
+body.nav-back .animate-from-origin,
+body.nav-tab .animate-from-origin {
+  will-change: transform, opacity;
 }
 
 /* Press feedback */
