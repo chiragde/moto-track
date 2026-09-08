@@ -264,7 +264,8 @@ def register_features(app, helpers):
                 conn.execute(
                     """
                     UPDATE fuel_entries
-                    SET entry_date=?, liters=?, cost=?, odometer=?, notes=?, tag=?
+                    SET entry_date=?, liters=?, cost=?, odometer=?, notes=?, tag=?,
+                        is_partial=?, station_name=?
                     WHERE id=?
                     """,
                     (
@@ -274,6 +275,8 @@ def register_features(app, helpers):
                         float(request.form.get("odometer")),
                         request.form.get("notes", "").strip() or None,
                         request.form.get("tag") or None,
+                        1 if request.form.get("is_partial") else 0,
+                        request.form.get("station_name", "").strip() or None,
                         entry_id,
                     ),
                 )
@@ -444,6 +447,16 @@ def register_features(app, helpers):
         flash("Odometer reading deleted.", "success")
         return redirect(url_for("odometer"))
 
+    from roadmap_features import register_roadmap_features
+
+    register_roadmap_features(
+        app,
+        {
+            **helpers,
+            "get_reminders_with_status": helpers.get("get_reminders_with_status"),
+        },
+    )
+
 
 def _send_reset_email(to_email, reset_url):
     host = os.environ.get("SMTP_HOST")
@@ -470,20 +483,32 @@ def _send_reset_email(to_email, reset_url):
 
 def seed_reminders_for_bike(bike_id, make=None, model=None):
     from constants import DEFAULT_REMINDERS
+    from model_specs import get_model_specs, specs_to_reminders
 
-    service_km = 5000
-    make_lower = (make or "").lower()
-    for brand, intervals in BIKE_SERVICE_INTERVALS.items():
-        if brand in make_lower or (model and brand in model.lower()):
-            service_km = intervals.get("service_km", service_km)
-            break
+    specs = get_model_specs(make, model)
+    reminders = specs_to_reminders(specs)
 
-    reminders = []
-    for r in DEFAULT_REMINDERS:
-        item = dict(r)
-        if item["reminder_type"] == "service" and item.get("interval_km"):
-            item["interval_km"] = service_km
-        reminders.append(item)
+    if specs.get("tire_front_psi") and not any(r["reminder_type"] == "tire_check" for r in reminders):
+        reminders.append({
+            "title": "Tire pressure check",
+            "reminder_type": "tire_check",
+            "interval_km": 1000,
+            "interval_days": 30,
+        })
+
+    if not reminders:
+        service_km = 5000
+        make_lower = (make or "").lower()
+        for brand, intervals in BIKE_SERVICE_INTERVALS.items():
+            if brand in make_lower or (model and brand in model.lower()):
+                service_km = intervals.get("service_km", service_km)
+                break
+        reminders = []
+        for r in DEFAULT_REMINDERS:
+            item = dict(r)
+            if item["reminder_type"] == "service" and item.get("interval_km"):
+                item["interval_km"] = service_km
+            reminders.append(item)
 
     with get_db() as conn:
         for reminder in reminders:

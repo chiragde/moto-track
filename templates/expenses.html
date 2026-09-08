@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "macros.html" import flash_messages, top_bar, bottom_nav, swipe_row, empty_state %}
+
+{% block title %}Expenses - Moto Track{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {{ top_bar('Expenses', bikes=nav_bikes, active_bike=nav_active_bike) }}
+
+  <main class="content">
+    {{ flash_messages() }}
+
+    <div class="stat-grid stat-grid-compact">
+      <div class="stat-card">
+        <div class="label">Total TCO</div>
+        <div class="value small">{{ tco.total|money }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Other costs</div>
+        <div class="value small">{{ tco.other|money }}</div>
+      </div>
+    </div>
+
+    <p class="section-label">Add expense</p>
+    <div class="card card-inset">
+      <form method="post" class="quick-add-form" data-offline-kind="expense">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" name="category" required>
+              {% for key, label in categories.items() %}
+                <option value="{{ key }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="amount">Amount</label>
+            <input id="amount" name="amount" type="number" step="0.01" min="0" placeholder="{{ user_settings.currency_symbol }}0" required inputmode="decimal">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="entry_date">Date</label>
+          <input id="entry_date" name="entry_date" type="date" class="ios-date-input" required>
+        </div>
+        <div class="form-group">
+          <label for="notes">Notes</label>
+          <input id="notes" name="notes" type="text" placeholder="Optional">
+        </div>
+        <button class="btn btn-primary" type="submit">Save</button>
+      </form>
+    </div>
+
+    <p class="section-label">History</p>
+    <div class="card card-inset">
+      {% if entries %}
+        {% for entry in entries %}
+          <div class="list-item">
+            <div>
+              <div class="title">{{ categories.get(entry.category, entry.category) }}</div>
+              <div class="meta">{{ entry.entry_date }}{% if entry.notes %} · {{ entry.notes }}{% endif %}</div>
+            </div>
+            <div class="amount">{{ entry.amount|money }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        {{ empty_state('No expenses yet', 'Track insurance, registration, tolls, and gear.', 'wallet') }}
+      {% endif %}
+    </div>
+
+    <div class="card card-inset" style="margin-top: 16px;">
+      <div class="card-header">Cost breakdown</div>
+      <div class="list-item"><div class="title">Fuel</div><div class="amount">{{ tco.fuel|money }}</div></div>
+      <div class="list-item"><div class="title">Service</div><div class="amount">{{ tco.maintenance|money }}</div></div>
+      <div class="list-item"><div class="title">DIY care</div><div class="amount">{{ tco.care|money }}</div></div>
+      <div class="list-item"><div class="title">Other</div><div class="amount">{{ tco.other|money }}</div></div>
+    </div>
+  </main>
+
+  {{ bottom_nav('more') }}
+</div>
+<script>
+  document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

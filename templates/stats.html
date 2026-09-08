@@ -68,7 +68,24 @@
 
     </div>
 
+    <div class="card chart-card">
+      <div class="card-header">Total cost of ownership (monthly)</div>
+      <div class="chart-wrap">
+        <canvas id="tcoChart"></canvas>
+      </div>
+      {% if not stats.monthly_tco %}
+        <div class="empty-state"><p>Add fuel, service, or expenses to see TCO trends.</p></div>
+      {% endif %}
+    </div>
 
+    <div class="card">
+      <div class="card-header">TCO summary</div>
+      <div class="list-item"><div class="title">Fuel</div><div class="amount">{{ stats.tco.fuel|money }}</div></div>
+      <div class="list-item"><div class="title">Service</div><div class="amount">{{ stats.tco.maintenance|money }}</div></div>
+      <div class="list-item"><div class="title">DIY care</div><div class="amount">{{ stats.tco.care|money }}</div></div>
+      <div class="list-item"><div class="title">Other</div><div class="amount">{{ stats.tco.other|money }}</div></div>
+      <div class="list-item"><div class="title"><strong>Grand total</strong></div><div class="amount"><strong>{{ stats.tco.total|money }}</strong></div></div>
+    </div>
 
     <div class="card chart-card">
 
@@ -278,47 +295,49 @@
 
 
 
-  if (chartData.monthly_spend.length) {
-
+  if (chartData.monthly_spend && chartData.monthly_spend.length) {
     new Chart(document.getElementById('fuelSpendChart'), {
-
       type: 'bar',
-
       data: {
-
         labels: chartData.monthly_spend.map(d => d.month),
-
         datasets: [{
-
           data: chartData.monthly_spend.map(d => d.cost),
-
           backgroundColor: '#34c759',
-
           borderRadius: 6,
-
         }],
-
       },
-
       options: {
-
         ...chartDefaults,
-
         scales: {
-
           ...chartDefaults.scales,
-
           y: { ...chartDefaults.scales.y, title: { display: true, text: '₹' } },
-
         },
-
       },
-
     });
-
   }
 
-
+  if (chartData.monthly_tco && chartData.monthly_tco.length) {
+    new Chart(document.getElementById('tcoChart'), {
+      type: 'bar',
+      data: {
+        labels: chartData.monthly_tco.map(d => d.month),
+        datasets: [
+          { label: 'Fuel', data: chartData.monthly_tco.map(d => d.fuel), backgroundColor: '#007aff', borderRadius: 4 },
+          { label: 'Service', data: chartData.monthly_tco.map(d => d.maintenance), backgroundColor: '#34c759', borderRadius: 4 },
+          { label: 'Care', data: chartData.monthly_tco.map(d => d.care), backgroundColor: '#ff9500', borderRadius: 4 },
+          { label: 'Other', data: chartData.monthly_tco.map(d => d.other), backgroundColor: '#8e8e93', borderRadius: 4 },
+        ],
+      },
+      options: {
+        ...chartDefaults,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { ...chartDefaults.scales.x, stacked: true },
+          y: { ...chartDefaults.scales.y, stacked: true, title: { display: true, text: '₹' } },
+        },
+      },
+    });
+  }
 
   if (chartData.maintenance.length) {
 

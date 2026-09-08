@@ -6,7 +6,8 @@
   const STAGGER_SELECTOR =
     ".content > .flash, .content > .bike-selector, .content > .stat-grid, " +
     ".content > .stat-card, .content > .card, .content > .tip-card, .content > .empty-state, " +
-    ".home-hero, .home-glance, .home-milestone, .home-actions, .home-reminders";
+    ".home-hero, .home-glance, .home-milestone, .home-actions, .home-reminders, " +
+    ".home-parts-strip, .home-specs, .section-label";
 
   function setTransition(type, origin) {
     if (REDUCED_MOTION) {
@@ -44,6 +45,10 @@
   }
 
   function applyStaggeredOrigins(origin) {
+    if (document.body.classList.contains("timeline-page")) {
+      return;
+    }
+
     const items = document.querySelectorAll(STAGGER_SELECTOR);
     items.forEach(function (el, index) {
       const rect = el.getBoundingClientRect();
@@ -88,7 +93,17 @@
 
     requestAnimationFrame(function () {
       applyStaggeredOrigins(origin);
+      clearNavWillChange();
     });
+  }
+
+  function clearNavWillChange() {
+    window.setTimeout(function () {
+      document.body.classList.remove("nav-forward", "nav-back", "nav-tab", "nav-auth");
+      document.querySelectorAll(".animate-from-origin").forEach(function (el) {
+        el.classList.remove("animate-from-origin");
+      });
+    }, 900);
   }
 
   function isInternalLink(anchor) {

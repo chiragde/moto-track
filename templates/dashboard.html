@@ -5,6 +5,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -56,15 +57,33 @@
         </div>
         <div class="home-glance-card">
           <i data-lucide="fuel" class="home-glance-icon"></i>
-          <div class="home-glance-value small">
-            {% if stats.avg_efficiency %}{{ "%.1f"|format(stats.avg_efficiency) }}{% else %}—{% endif %}
+          <div class="home-glance-value-row">
+            {% if stats.avg_efficiency %}
+              <span class="home-glance-value small">{{ "%.1f"|format(stats.avg_efficiency) }}</span>
+              {% if stats.efficiency_trend == 'up' %}
+                <i data-lucide="trending-up" class="trend-icon trend-good" title="Improving"></i>
+              {% elif stats.efficiency_trend == 'down' %}
+                <i data-lucide="trending-down" class="trend-icon trend-bad" title="Declining"></i>
+              {% endif %}
+            {% else %}
+              <span class="home-glance-hint">{{ stats.efficiency_hint or 'Log 2+ fill-ups' }}</span>
+            {% endif %}
           </div>
           <div class="home-glance-label">Efficiency {{ user_settings.efficiency_label }}</div>
         </div>
         <div class="home-glance-card">
           <i data-lucide="wallet" class="home-glance-icon"></i>
-          <div class="home-glance-value small">
-            {% if stats.cost_per_km %}{{ user_settings.currency_symbol }}{{ "%.2f"|format(stats.cost_per_km) }}{% else %}—{% endif %}
+          <div class="home-glance-value-row">
+            {% if stats.cost_per_km %}
+              <span class="home-glance-value small">{{ user_settings.currency_symbol }}{{ "%.2f"|format(stats.cost_per_km) }}</span>
+              {% if stats.cost_trend == 'down' %}
+                <i data-lucide="trending-down" class="trend-icon trend-good" title="Costs decreasing"></i>
+              {% elif stats.cost_trend == 'up' %}
+                <i data-lucide="trending-up" class="trend-icon trend-bad" title="Costs increasing"></i>
+              {% endif %}
+            {% else %}
+              <span class="home-glance-hint">Need distance data</span>
+            {% endif %}
           </div>
           <div class="home-glance-label">Cost / {{ user_settings.distance_unit }}</div>
         </div>
@@ -74,6 +93,56 @@
           <div class="home-glance-label">Service spend</div>
         </div>
       </section>
+
+      {% if parts_health %}
+        <p class="section-label">Parts health</p>
+        <div class="home-parts-strip">
+          {% for item in parts_health[:5] %}
+            <div class="home-part-chip home-part-{{ item.status }}" title="{{ item.detail }}">
+              <div class="home-part-meter" style="--health: {{ item.health }}">
+                <svg viewBox="0 0 72 72" aria-hidden="true">
+                  <circle class="home-part-track" cx="36" cy="36" r="30"></circle>
+                  <circle class="home-part-arc" cx="36" cy="36" r="30"></circle>
+                </svg>
+                <div class="home-part-icon-wrap">
+                  <i data-lucide="{{ item.icon }}"></i>
+                </div>
+              </div>
+              <span class="home-part-label">{{ item.part.label }}</span>
+              <span class="home-part-pct">{{ item.health }}%</span>
+              <span class="home-part-detail">{{ item.detail }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if model_specs.tire_front_psi %}
+        <section class="home-specs card card-inset">
+          <div class="home-specs-header">
+            <i data-lucide="circle-dot"></i>
+            <span>Recommended specs</span>
+            <small>Verify with manual</small>
+          </div>
+          <div class="home-specs-grid">
+            <div class="home-spec-item">
+              <span class="home-spec-label">Tire pressure</span>
+              <span class="home-spec-value">F {{ model_specs.tire_front_psi }} / R {{ model_specs.tire_rear_psi }} psi</span>
+            </div>
+            {% if model_specs.oil_type %}
+              <div class="home-spec-item">
+                <span class="home-spec-label">Engine oil</span>
+                <span class="home-spec-value">{{ model_specs.oil_type }}</span>
+              </div>
+            {% endif %}
+            {% if model_specs.tank_liters %}
+              <div class="home-spec-item">
+                <span class="home-spec-label">Tank</span>
+                <span class="home-spec-value">{{ model_specs.tank_liters }} L</span>
+              </div>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
 
       {% if next_milestone %}
         <section class="home-milestone home-milestone-{{ next_milestone.status }}">
@@ -91,7 +160,8 @@
         <p class="section-label">Reminders</p>
         <div class="card card-inset home-reminders">
           {% for item in reminders %}
-            <div class="list-item reminder-item reminder-{{ item.status }}">
+            <div class="list-item reminder-item reminder-{{ item.status }}"
+                 style="--neglect: {{ item.neglect_level }}">
               <div class="home-reminder-icon">
                 <i data-lucide="{{ care_task_icons.get(item.reminder.reminder_type, 'bell') }}"></i>
               </div>
@@ -99,7 +169,7 @@
                 <div class="title">{{ item.reminder.title }}</div>
                 <div class="meta">{% if item.detail %}{{ item.detail }}{% else %}On track{% endif %}</div>
               </div>
-              <span class="badge badge-{{ item.status }}">{{ item.status }}</span>
+              <span class="reminder-urgency-dot" aria-hidden="true"></span>
             </div>
           {% endfor %}
           <div class="card-footer-link"><a href="{{ url_for('care') }}">All reminders →</a></div>
@@ -130,12 +200,10 @@
         <p class="section-label">Last fill-up</p>
         <div class="card card-inset">
           {% set entry = stats.recent_fuel[0] %}
-          <div class="list-item">
-            <div>
-              <div class="title">{{ entry.entry_date }}</div>
-              <div class="meta">{{ "%.1f"|format(entry.liters) }} {{ user_settings.volume_unit }} · {{ "{:,.0f}".format(entry.odometer) }} {{ user_settings.distance_unit }}</div>
-            </div>
-            <div class="amount">{{ entry.cost|money }}</div>
+          <div class="fuel-story-item">
+            <div class="fuel-story-date">{{ entry.entry_date|friendly_date }}</div>
+            <p class="fuel-story-text">{{ entry|fuel_sentence }}</p>
+            <div class="fuel-story-cost">{{ entry.cost|money }}</div>
           </div>
         </div>
       {% endif %}

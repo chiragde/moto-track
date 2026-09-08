@@ -15,6 +15,11 @@ if exist ".venv\Scripts\python.exe" (
 echo Starting Moto Track...
 echo Press Ctrl+C to stop the server.
 echo (LAN URLs are printed below when the server starts.)
-echo."%PY%" app.py
+echo.
+"%PY%" app.py
+if errorlevel 1 (
+  echo.
+  echo Server exited with an error. See messages above.
+)
 pause
 popd

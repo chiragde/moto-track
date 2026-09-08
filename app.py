@@ -43,7 +43,9 @@ from features import (
     register_features,
     seed_reminders_for_bike,
 )
+from parts_health import get_parts_health, seed_parts_for_bike, sync_part_from_task
 from receipt_parser import parse_receipt_image, parsing_available
+from tco import build_tco_summary, get_monthly_tco
 from settings_helpers import (
     DEFAULT_SETTINGS,
     ensure_user_settings,
@@ -175,6 +177,43 @@ def money_filter(context, amount):
     return f"{prefs['currency_symbol']}{amount:,.0f}"
 
 
+@app.template_filter("friendly_date")
+def friendly_date_filter(value):
+    if not value:
+        return ""
+    try:
+        parsed = datetime.strptime(str(value)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return str(value)
+    if parsed.year == date.today().year:
+        return f"{parsed.strftime('%B')} {parsed.day}"
+    return f"{parsed.strftime('%B')} {parsed.day}, {parsed.year}"
+
+
+@app.template_filter("fuel_sentence")
+@pass_context
+def fuel_sentence_filter(context, entry):
+    prefs = context.get("user_settings") or settings_for_template(DEFAULT_SETTINGS)
+    vol = prefs["volume_unit"]
+    dist = prefs["distance_unit"]
+    liters = float(entry["liters"])
+    odometer = float(entry["odometer"])
+    is_partial = bool(entry["is_partial"]) if entry["is_partial"] is not None else False
+
+    if is_partial:
+        sentence = f"Partial fill — {liters:.1f} {vol} at odo reading {odometer:,.0f} {dist}"
+    else:
+        sentence = f"Fueled up {liters:.1f} {vol} at odo reading {odometer:,.0f} {dist}"
+
+    station = entry["station_name"] if entry["station_name"] else None
+    if station:
+        sentence += f" · {station}"
+    tag = entry["tag"] if entry["tag"] else None
+    if tag and tag in TRIP_TAGS:
+        sentence += f" · {TRIP_TAGS[tag]}"
+    return sentence
+
+
 def get_latest_odometer(bike_id):
     with get_db() as conn:
         latest = conn.execute(
@@ -218,6 +257,101 @@ def get_latest_odometer(bike_id):
         return dict(care) if care else None
 
 
+def efficiency_unavailable_reason(fuel_stats):
+    if fuel_stats.get("avg_efficiency"):
+        return None
+    entries = fuel_stats.get("entries") or []
+    if len(entries) < 2:
+        return "Log 2+ fill-ups"
+    if not fuel_stats.get("efficiency_series"):
+        return "Need full fill-ups between readings"
+    return "Not enough distance data"
+
+
+def fuel_efficiency_trend(fuel_stats):
+    series = fuel_stats.get("efficiency_series") or []
+    if len(series) < 2:
+        return None
+    diff = series[-1]["efficiency"] - series[-2]["efficiency"]
+    if abs(diff) < 0.3:
+        return None
+    return "up" if diff > 0 else "down"
+
+
+def cost_per_km_trend(bike_id):
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT cost, odometer FROM fuel_entries
+            WHERE bike_id = ? AND (is_partial IS NULL OR is_partial = 0)
+            ORDER BY entry_date ASC, odometer ASC
+            """,
+            (bike_id,),
+        ).fetchall()
+    if len(rows) < 4:
+        return None
+
+    mid = len(rows) // 2
+    segments = (rows[: mid + 1], rows[mid:])
+
+    def segment_cpk(segment):
+        if len(segment) < 2:
+            return None
+        distance = segment[-1]["odometer"] - segment[0]["odometer"]
+        if distance <= 0:
+            return None
+        return sum(r["cost"] for r in segment) / distance
+
+    older = segment_cpk(segments[0])
+    newer = segment_cpk(segments[1])
+    if older is None or newer is None or older == 0:
+        return None
+    change = (newer - older) / older
+    if abs(change) < 0.05:
+        return None
+    return "up" if change > 0 else "down"
+
+
+def reminder_neglect_level(reminder, current_odo, status):
+    if status == "setup":
+        return 8
+
+    km_score = 0
+    day_score = 0
+    interval_km = reminder["interval_km"]
+    interval_days = reminder["interval_days"]
+
+    if interval_km and reminder["last_done_odometer"] is not None and current_odo is not None:
+        progress = (current_odo - reminder["last_done_odometer"]) / interval_km
+        if progress >= 1.2:
+            km_score = 100
+        elif progress >= 1:
+            km_score = 75 + (progress - 1) * 125
+        elif progress >= 0.75:
+            km_score = 45 + (progress - 0.75) * 120
+        else:
+            km_score = progress * 60
+
+    if interval_days and reminder["last_done_date"]:
+        last_done = datetime.strptime(reminder["last_done_date"], "%Y-%m-%d").date()
+        progress = (date.today() - last_done).days / interval_days
+        if progress >= 1.2:
+            day_score = 100
+        elif progress >= 1:
+            day_score = 75 + (progress - 1) * 125
+        elif progress >= 0.75:
+            day_score = 45 + (progress - 0.75) * 120
+        else:
+            day_score = progress * 60
+
+    score = max(km_score, day_score)
+    if status == "overdue":
+        return int(min(100, max(score, 80)))
+    if status == "soon":
+        return int(min(100, max(score, 55)))
+    return int(min(40, score))
+
+
 def calculate_fuel_stats(bike_id):
     with get_db() as conn:
         entries = conn.execute(
@@ -247,6 +381,8 @@ def calculate_fuel_stats(bike_id):
     for i in range(1, len(entries)):
         prev = entries[i - 1]
         curr = entries[i]
+        if curr["is_partial"] or prev["is_partial"]:
+            continue
         distance = curr["odometer"] - prev["odometer"]
         if distance > 0 and curr["liters"] > 0:
             eff = distance / curr["liters"]
@@ -271,14 +407,27 @@ def calculate_fuel_stats(bike_id):
 
     avg_efficiency = sum(efficiencies) / len(efficiencies) if efficiencies else None
 
-    return {
+    efficiency_alert = None
+    if len(efficiencies) >= 3:
+        recent = efficiencies[-1]
+        prior = efficiencies[:-1]
+        prior_avg = sum(prior) / len(prior)
+        if prior_avg > 0 and recent < prior_avg * 0.85:
+            drop_pct = round((1 - recent / prior_avg) * 100)
+            efficiency_alert = f"Last fill-up was {drop_pct}% below your average"
+
+    result = {
         "total_liters": total_liters,
         "total_cost": total_cost,
         "avg_efficiency": avg_efficiency,
+        "efficiency_alert": efficiency_alert,
         "entries": list(reversed(entries)),
         "efficiency_series": efficiency_series,
         "monthly_spend": monthly_spend,
     }
+    result["efficiency_hint"] = efficiency_unavailable_reason(result)
+    result["efficiency_trend"] = fuel_efficiency_trend(result)
+    return result
 
 
 def get_reminders_with_status(bike_id, current_odo=None):
@@ -328,6 +477,8 @@ def get_reminders_with_status(bike_id, current_odo=None):
             status = "setup"
             detail = "Mark as done to start tracking"
 
+        neglect_level = reminder_neglect_level(reminder, current_odo, status)
+
         results.append(
             {
                 "reminder": reminder,
@@ -335,6 +486,7 @@ def get_reminders_with_status(bike_id, current_odo=None):
                 "detail": detail,
                 "due_in_km": due_in_km,
                 "due_in_days": due_in_days,
+                "neglect_level": neglect_level,
             }
         )
 
@@ -389,6 +541,8 @@ def build_stats_payload(bike_id):
         "care_count": care_count,
         "cost_per_km": calculate_cost_per_km(bike_id),
         "month_change": month_over_month_spend(bike_id),
+        "tco": build_tco_summary(bike_id, fuel_stats["total_cost"], total_maintenance),
+        "monthly_tco": get_monthly_tco(bike_id),
     }
 
 
@@ -527,16 +681,22 @@ def dashboard():
     reminders = get_reminders_with_status(bike_id, current_odo)
     urgent = [r for r in reminders if r["status"] in ("overdue", "soon")]
     next_milestone = urgent[0] if urgent else None
+    parts_health, model_specs = get_parts_health(bike_id, current_odo, bike["make"], bike["model"])
+    tco = build_tco_summary(bike_id, fuel_stats["total_cost"], maintenance_total)
 
     stats = {
         "fuel_cost": fuel_stats["total_cost"],
         "maintenance_cost": maintenance_total,
         "avg_efficiency": fuel_stats["avg_efficiency"],
+        "efficiency_hint": efficiency_unavailable_reason(fuel_stats),
+        "efficiency_trend": fuel_efficiency_trend(fuel_stats),
+        "cost_trend": cost_per_km_trend(bike_id),
         "latest_odo": latest_odo,
         "recent_fuel": fuel_stats["entries"][:3],
         "recent_maintenance": recent_maintenance,
         "recent_care": recent_care,
         "cost_per_km": calculate_cost_per_km(bike_id),
+        "tco_total": tco["total"],
     }
 
     return render_template(
@@ -546,6 +706,9 @@ def dashboard():
         stats=stats,
         reminders=reminders[:5],
         next_milestone=next_milestone,
+        parts_health=parts_health,
+        model_specs=model_specs,
+        tco=tco,
         tip=get_tip_of_day(),
         care_task_types=CARE_TASK_TYPES,
         care_task_icons=CARE_TASK_ICONS,
@@ -793,6 +956,7 @@ def garage():
                             (bike_id, date.today().isoformat(), odometer_val, "Initial reading"),
                         )
                 seed_default_reminders(bike_id, make, model)
+                seed_parts_for_bike(bike_id, make, model)
                 session["active_bike_id"] = bike_id
                 flash("Vehicle added to your garage.", "success")
                 return redirect(url_for("garage"))
@@ -898,6 +1062,8 @@ def fuel():
         odometer = request.form.get("odometer", "")
         notes = request.form.get("notes", "").strip()
         tag = request.form.get("tag", "").strip() or None
+        is_partial = 1 if request.form.get("is_partial") else 0
+        station_name = request.form.get("station_name", "").strip() or None
 
         try:
             liters_val = float(liters)
@@ -913,8 +1079,8 @@ def fuel():
                 conn.execute(
                     """
                     INSERT INTO fuel_entries
-                    (bike_id, entry_date, liters, cost, odometer, notes, tag, receipt_image)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (bike_id, entry_date, liters, cost, odometer, notes, tag, receipt_image, is_partial, station_name)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         bike_id,
@@ -925,6 +1091,8 @@ def fuel():
                         notes or None,
                         tag,
                         receipt_image,
+                        is_partial,
+                        station_name,
                     ),
                 )
             flash("Fuel entry saved.", "success")
@@ -1098,6 +1266,7 @@ def care():
                             """,
                             (entry_date, odometer_val, matching["id"]),
                         )
+                sync_part_from_task(bike_id, task_type, odometer_val, entry_date)
                 flash("Care entry logged.", "success")
                 return redirect_preserving_from("care")
 
@@ -1198,6 +1367,8 @@ def stats():
                 "efficiency": payload["fuel"]["efficiency_series"],
                 "monthly_spend": payload["fuel"]["monthly_spend"],
                 "maintenance": payload["maintenance_breakdown"],
+                "monthly_tco": payload["monthly_tco"],
+                "tco": payload["tco"],
             }
         ),
     )
@@ -1278,6 +1449,8 @@ register_features(
         "handle_receipt_submission": handle_receipt_submission,
         "parsing_available": parsing_available,
         "redirect_preserving_from": redirect_preserving_from,
+        "calculate_fuel_stats": calculate_fuel_stats,
+        "get_timeline_entries": get_timeline_entries,
     },
 )
 

@@ -72,8 +72,12 @@
   width: 100%;
   background: var(--ios-card);
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
   touch-action: pan-y;
+}
+
+.swipe-row.is-dragging .swipe-row-content,
+.swipe-row.is-open .swipe-row-content {
+  will-change: transform;
 }
 
 .swipe-row.is-open .swipe-row-content {
